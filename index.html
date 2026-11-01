@@ -40,7 +40,7 @@ canvas.style.cssText='display:block!important;position:fixed;left:-10000px;top:0
 function roundedRect(x,y,w,h,r){ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x,y,w,h,r);else ctx.rect(x,y,w,h)}
 function linesFor(text,maxWidth,font){ctx.font=font;const words=String(text||'').split(/\s+/),lines=[];let line='';for(const word of words){const next=line?line+' '+word:word;if(ctx.measureText(next).width>maxWidth&&line){lines.push(line);line=word}else line=next}if(line)lines.push(line);return lines}
 function draw(elapsed){
-const sceneIndex=Math.min(scenes.length-1,Math.floor(elapsed/perScene)),scene=scenes[sceneIndex];
+const sceneIndex=Math.max(0,Math.min(scenes.length-1,Math.floor(elapsed/perScene))),scene=scenes[sceneIndex]||scenes[0]||{story:'',narration:''};
 const progress=Math.min(1,(elapsed%perScene)/perScene),phase=elapsed/1000,hue=(sceneIndex*37)%360;
 const bg=ctx.createLinearGradient(0,0,W,H);bg.addColorStop(0,'hsl('+hue+',42%,25%)');bg.addColorStop(.55,'#17213c');bg.addColorStop(1,'#070b18');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
 const pad=portrait?34:54;
