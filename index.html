@@ -43,45 +43,48 @@ function draw(elapsed){
 const sceneIndex=Math.max(0,Math.min(scenes.length-1,Math.floor(elapsed/perScene))),scene=scenes[sceneIndex]||scenes[0]||{story:'',narration:''};
 const progress=Math.min(1,(elapsed%perScene)/perScene),phase=elapsed/1000,hue=(sceneIndex*37)%360;
 const bg=ctx.createLinearGradient(0,0,W,H);bg.addColorStop(0,'hsl('+hue+',42%,25%)');bg.addColorStop(.55,'#17213c');bg.addColorStop(1,'#070b18');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
-const pad=portrait?34:54;
+const pad=portrait?30:45;
 for(let i=0;i<26;i++){const x=(i*173+phase*(12+(i%4)*5))%(W+30)-15,y=(i*97+Math.sin(phase*.7+i)*22)%(H*.82);ctx.fillStyle='rgba(255,255,255,.18)';ctx.beginPath();ctx.arc(x,y,1+(i%3),0,Math.PI*2);ctx.fill()}
-ctx.fillStyle='#f0bd63';ctx.font='bold '+(portrait?22:25)+'px system-ui';ctx.fillText(($('videoTitle').value.trim()||'AI STORY STUDIO').slice(0,30),pad,portrait?55:55);
-ctx.textAlign='right';ctx.fillStyle='#cbd5ee';ctx.fillText('SCENE '+(sceneIndex+1)+' / '+scenes.length,W-pad,portrait?55:55);ctx.textAlign='left';
+ctx.fillStyle='#f0bd63';ctx.font='bold '+(portrait?22:24)+'px system-ui';ctx.fillText(($('videoTitle').value.trim()||'AI STORY STUDIO').slice(0,30),pad,portrait?48:42);
+ctx.textAlign='right';ctx.fillStyle='#cbd5ee';ctx.fillText('SCENE '+(sceneIndex+1)+' / '+scenes.length,W-pad,portrait?48:42);ctx.textAlign='left';
+const story=scene.story||'',lower=story.toLowerCase();
 const visualMap=[[/गाँव|गांव|village|घर/,'🏡'],[/जंगल|पेड़|forest|tree/,'🌳'],[/प्यार|प्रेम|love|दिल/,'❤️'],[/स्कूल|पढ़ाई|school/,'🎒'],[/बारिश|rain/,'🌧️'],[/नदी|पानी|समुद्र|river|sea/,'🌊'],[/पहाड़|mountain/,'🏔️'],[/दोस्त|मित्र|friend/,'🤝'],[/परिवार|माँ|पिता|family/,'👨‍👩‍👧'],[/राजा|रानी|king|queen/,'👑'],[/जादू|magic/,'✨']];
-const visual=visualMap.find(([re])=>re.test(scene.story.toLowerCase()));
-// Two recurring illustrated story characters, kept visually consistent in every scene.
-function drawCharacter(cx,ground,scale,shirt,hair,step,flip){
-ctx.save();ctx.translate(cx,ground);ctx.scale(flip?-1:1,1);
-const bob=Math.sin(phase*5+step)*3*scale,leg=Math.sin(phase*5+step)*9*scale;
-ctx.lineCap='round';ctx.lineJoin='round';
-// legs and shoes
-ctx.strokeStyle='#26334d';ctx.lineWidth=11*scale;
-ctx.beginPath();ctx.moveTo(-9*scale,-48*scale+bob);ctx.lineTo((-13+leg)*scale,-9*scale);ctx.moveTo(9*scale,-48*scale+bob);ctx.lineTo((13-leg)*scale,-9*scale);ctx.stroke();
-ctx.strokeStyle='#f4e8d5';ctx.lineWidth=8*scale;ctx.beginPath();ctx.moveTo((-13+leg)*scale,-9*scale);ctx.lineTo(-2*scale,-7*scale);ctx.moveTo((13-leg)*scale,-9*scale);ctx.lineTo(24*scale,-7*scale);ctx.stroke();
-// body
-ctx.fillStyle=shirt;roundedRect(-27*scale,-112*scale+bob,54*scale,68*scale,17*scale);ctx.fill();
-// arms
-ctx.strokeStyle='#d99b72';ctx.lineWidth=12*scale;ctx.beginPath();ctx.moveTo(-23*scale,-100*scale+bob);ctx.lineTo((-37+Math.sin(phase*4+step)*5)*scale,-63*scale);ctx.moveTo(23*scale,-100*scale+bob);ctx.lineTo((37-Math.sin(phase*4+step)*5)*scale,-63*scale);ctx.stroke();
-// neck and face
-ctx.fillStyle='#d99b72';ctx.fillRect(-7*scale,-124*scale+bob,14*scale,18*scale);
-ctx.beginPath();ctx.arc(0,-145*scale+bob,27*scale,0,Math.PI*2);ctx.fill();
-// hair
-ctx.fillStyle=hair;ctx.beginPath();ctx.arc(0,-153*scale+bob,27*scale,Math.PI,Math.PI*2);ctx.lineTo(25*scale,-147*scale+bob);ctx.quadraticCurveTo(15*scale,-165*scale+bob,-2*scale,-166*scale+bob);ctx.quadraticCurveTo(-22*scale,-166*scale+bob,-27*scale,-145*scale+bob);ctx.fill();
-// eyes and smile
-ctx.fillStyle='#2b2430';ctx.beginPath();ctx.arc(-9*scale,-145*scale+bob,2.5*scale,0,Math.PI*2);ctx.arc(9*scale,-145*scale+bob,2.5*scale,0,Math.PI*2);ctx.fill();
-ctx.strokeStyle='#7a3d37';ctx.lineWidth=2*scale;ctx.beginPath();ctx.arc(0,-137*scale+bob,8*scale,.15,Math.PI-.15);ctx.stroke();
+const visual=visualMap.find(([re])=>re.test(lower));
+ctx.textAlign='center';ctx.font=(portrait?85:92)+'px system-ui';ctx.fillText(visual?visual[1]:'🎬',W/2,H*(portrait?.31:.30));ctx.textAlign='left';
+// Story-specific appearance: adapt the recurring illustrated cast to the people mentioned.
+const hasGirl=/लड़की|लड़की|बेटी|बहन|राजकुमारी|girl|daughter|sister|woman|महिला/.test(lower);
+const hasBoy=/लड़का|लड़का|बेटा|भाई|राजकुमार|boy|son|brother|man|पुरुष/.test(lower);
+const isChild=/बच्चे|बच्चों|बच्चा|लड़का|लड़का|लड़की|लड़की|बेटा|बेटी|child|children|kid/.test(lower);
+const castCount=/तीन|3 |तीन बच्चे|दोस्तों|दोनों|three|friends/.test(lower)?3:2;
+function drawCharacter(cx,ground,scale,shirt,hair,step,kind){
+ctx.save();ctx.translate(cx,ground);const bob=Math.sin(phase*4+step)*2.5*scale;
+const headR=(isChild?19:22)*scale,bodyW=(isChild?20:24)*scale,bodyH=(isChild?42:50)*scale;
+const legSwing=Math.sin(phase*4+step)*6*scale;
+ctx.lineCap='round';ctx.strokeStyle='#202b43';ctx.lineWidth=7*scale;
+ctx.beginPath();ctx.moveTo(-7*scale,-bodyH+bob);ctx.lineTo((-9+legSwing)*scale,-2*scale);ctx.moveTo(7*scale,-bodyH+bob);ctx.lineTo((9-legSwing)*scale,-2*scale);ctx.stroke();
+ctx.strokeStyle='#f4d0ad';ctx.lineWidth=6*scale;ctx.beginPath();ctx.moveTo((-9+legSwing)*scale,-2*scale);ctx.lineTo(-1*scale,0);ctx.moveTo((9-legSwing)*scale,-2*scale);ctx.lineTo(14*scale,0);ctx.stroke();
+ctx.fillStyle=shirt;roundedRect(-bodyW/2,-bodyH-2*scale+bob,bodyW,bodyH,8*scale);ctx.fill();
+ctx.strokeStyle='#d99b72';ctx.lineWidth=7*scale;ctx.beginPath();ctx.moveTo(-bodyW/2,-bodyH+8*scale+bob);ctx.lineTo(-bodyW/2-8*scale,-bodyH/2+Math.sin(phase*3+step)*4*scale);ctx.moveTo(bodyW/2,-bodyH+8*scale+bob);ctx.lineTo(bodyW/2+8*scale,-bodyH/2-Math.sin(phase*3+step)*4*scale);ctx.stroke();
+ctx.fillStyle='#d99b72';ctx.fillRect(-5*scale,-bodyH-10*scale+bob,10*scale,12*scale);
+ctx.beginPath();ctx.arc(0,-bodyH-10*scale-headR+bob,headR,0,Math.PI*2);ctx.fill();
+ctx.fillStyle=hair;ctx.beginPath();ctx.arc(0,-bodyH-13*scale-headR+bob,headR,Math.PI,Math.PI*2);ctx.lineTo(headR,-bodyH-12*scale-headR+bob);ctx.quadraticCurveTo(0,-bodyH-26*scale-headR+bob,-headR,-bodyH-12*scale-headR+bob);ctx.fill();
+ctx.fillStyle='#29212a';ctx.beginPath();ctx.arc(-7*scale,-bodyH-10*scale-headR+bob,1.8*scale,0,Math.PI*2);ctx.arc(7*scale,-bodyH-10*scale-headR+bob,1.8*scale,0,Math.PI*2);ctx.fill();
+ctx.strokeStyle='#803e38';ctx.lineWidth=1.5*scale;ctx.beginPath();ctx.arc(0,-bodyH-5*scale-headR+bob,5*scale,.15,Math.PI-.15);ctx.stroke();
+if(kind==='girl'){ctx.fillStyle=hair;ctx.beginPath();ctx.arc(-headR*.8,-bodyH-8*scale-headR+bob,6*scale,0,Math.PI*2);ctx.arc(headR*.8,-bodyH-8*scale-headR+bob,6*scale,0,Math.PI*2);ctx.fill()}
 ctx.restore();
 }
-const characterGround=portrait?H*.70:H*.83,characterScale=portrait?0.76:0.92;
-drawCharacter(W*.37,characterGround,characterScale,'#e76f51','#38251f',0,false);
-drawCharacter(W*.65,characterGround,characterScale,'#3d91c6','#211c2a',2,true);
-
-ctx.textAlign='center';ctx.font=(portrait?115:140)+'px system-ui';ctx.fillText(visual?visual[1]:'🎬',W/2,H*(portrait?.25:.43));ctx.textAlign='left';
-const titleFont='bold '+(portrait?29:38)+'px system-ui',titleLines=linesFor(scene.story,W-pad*2,titleFont).slice(0,portrait?7:4);ctx.font=titleFont;ctx.fillStyle='#fff';
-const titleY=H*(portrait?.39:.43);titleLines.forEach((line,i)=>ctx.fillText(line,pad,titleY+i*(portrait?43:51)));
-const subY=H-(portrait?150:105);ctx.fillStyle='rgba(5,10,24,.78)';roundedRect(pad-10,subY-35,W-pad*2+20,portrait?92:70,14);ctx.fill();ctx.fillStyle='#f0bd63';ctx.font='bold '+(portrait?17:19)+'px system-ui';ctx.fillText('कहानी',pad,subY-10);ctx.fillStyle='#e6ebf8';ctx.font=(portrait?17:19)+'px system-ui';linesFor(scene.narration,W-pad*2,(portrait?17:19)+'px system-ui').slice(0,portrait?2:1).forEach((line,i)=>ctx.fillText(line,pad,subY+20+i*24));
-ctx.fillStyle='#34415f';roundedRect(pad,H-25,W-pad*2,6,4);ctx.fill();ctx.fillStyle='#f0bd63';roundedRect(pad,H-25,(W-pad*2)*Math.min(1,(sceneIndex+progress)/scenes.length),6,4);ctx.fill();
+const ground=H*(portrait?.83:.85),sc=portrait?.83:1.05;
+const leftShirt=hasGirl&&!hasBoy?'#d85a91':'#e76f51',rightShirt=hasBoy&&!hasGirl?'#3d91c6':'#3d91c6';
+drawCharacter(W*.25,ground,sc,leftShirt,hasGirl&&!hasBoy?'#24162a':'#38251f',0,hasGirl&&!hasBoy?'girl':'boy');
+drawCharacter(W*.75,ground,sc,rightShirt,'#211c2a',2,hasGirl&&!hasBoy?'boy':'boy');
+if(castCount===3)drawCharacter(W*.50,ground,sc*.85,'#e3b341','#35241d',4,'boy');
+// Keep story text above the characters, so both remain clearly visible.
+const titleFont='bold '+(portrait?25:27)+'px system-ui',titleLines=linesFor(story,W-pad*2,titleFont).slice(0,portrait?4:3);ctx.font=titleFont;ctx.fillStyle='#fff';ctx.textAlign='center';
+const titleY=H*(portrait?.43:.40);titleLines.forEach((line,i)=>ctx.fillText(line,W/2,titleY+i*(portrait?34:35)));ctx.textAlign='left';
+const subY=H-(portrait?90:62);ctx.fillStyle='rgba(5,10,24,.86)';roundedRect(pad-8,subY-24,W-pad*2+16,portrait?55:44,10);ctx.fill();ctx.fillStyle='#f0bd63';ctx.font='bold '+(portrait?14:15)+'px system-ui';ctx.fillText('कहानी',pad,subY-5);ctx.fillStyle='#e6ebf8';ctx.font=(portrait?13:14)+'px system-ui';const cap=linesFor(scene.narration||story,W-pad*2,(portrait?13:14)+'px system-ui').slice(0,1);cap.forEach((line,i)=>ctx.fillText(line,pad,subY+15+i*18));
+ctx.fillStyle='#34415f';roundedRect(pad,H-12,W-pad*2,5,3);ctx.fill();ctx.fillStyle='#f0bd63';roundedRect(pad,H-12,(W-pad*2)*Math.min(1,(sceneIndex+progress)/scenes.length),5,3);ctx.fill();
 }
+
 stream=canvas.captureStream(fps);
 const mime=['video/webm;codecs=vp8','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));
 if(!mime)throw new Error('इस Chrome में WebM video recording support नहीं मिला।');
