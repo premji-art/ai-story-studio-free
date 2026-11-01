@@ -41,64 +41,84 @@ function roundedRect(x,y,w,h,r){ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x
 function linesFor(text,maxWidth,font){ctx.font=font;const words=String(text||'').split(/\s+/),lines=[];let line='';for(const word of words){const next=line?line+' '+word:word;if(ctx.measureText(next).width>maxWidth&&line){lines.push(line);line=word}else line=next}if(line)lines.push(line);return lines}
 function draw(elapsed){
 const sceneIndex=Math.max(0,Math.min(scenes.length-1,Math.floor(elapsed/perScene))),scene=scenes[sceneIndex]||scenes[0]||{story:'',narration:''};
-const progress=Math.min(1,(elapsed%perScene)/perScene),phase=elapsed/1000,hue=(sceneIndex*37)%360;
-const bg=ctx.createLinearGradient(0,0,W,H);bg.addColorStop(0,'hsl('+hue+',42%,25%)');bg.addColorStop(.55,'#17213c');bg.addColorStop(1,'#070b18');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
-const pad=portrait?30:45;
-for(let i=0;i<26;i++){const x=(i*173+phase*(12+(i%4)*5))%(W+30)-15,y=(i*97+Math.sin(phase*.7+i)*22)%(H*.82);ctx.fillStyle='rgba(255,255,255,.18)';ctx.beginPath();ctx.arc(x,y,1+(i%3),0,Math.PI*2);ctx.fill()}
-ctx.fillStyle='#f0bd63';ctx.font='bold '+(portrait?22:24)+'px system-ui';ctx.fillText(($('videoTitle').value.trim()||'AI STORY STUDIO').slice(0,30),pad,portrait?48:42);
-ctx.textAlign='right';ctx.fillStyle='#cbd5ee';ctx.fillText('SCENE '+(sceneIndex+1)+' / '+scenes.length,W-pad,portrait?48:42);ctx.textAlign='left';
+const progress=Math.min(1,(elapsed%perScene)/perScene),phase=elapsed/1000;
 const story=scene.story||'',lower=story.toLowerCase();
+const pad=portrait?24:40;
+// Bright, colourful cartoon village background with a cinematic 3D-cartoon palette.
+const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#16baf4');sky.addColorStop(.58,'#a5e9ff');sky.addColorStop(1,'#f8dc91');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+function ellipse(x,y,rx,ry,color){ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill()}
+function house(x,y,w,h,wall,roof){
+ctx.fillStyle='rgba(0,0,0,.12)';ctx.fillRect(x+6,y+8,w,h);
+ctx.fillStyle=wall;ctx.fillRect(x,y,w,h);
+ctx.fillStyle=roof;ctx.beginPath();ctx.moveTo(x-12,y+8);ctx.lineTo(x+w/2,y-h*.42);ctx.lineTo(x+w+12,y+8);ctx.closePath();ctx.fill();
+ctx.fillStyle='#70452f';ctx.fillRect(x+w*.42,y+h*.48,w*.19,h*.52);
+ctx.fillStyle='#b8edff';ctx.fillRect(x+w*.12,y+h*.27,w*.2,h*.2);ctx.fillRect(x+w*.68,y+h*.27,w*.2,h*.2);
+ctx.strokeStyle='#fff0c4';ctx.lineWidth=3;ctx.strokeRect(x+w*.12,y+h*.27,w*.2,h*.2);ctx.strokeRect(x+w*.68,y+h*.27,w*.2,h*.2);
+}
+house(W*.02,H*.24,W*.24,H*.28,'#ffd17c','#d65b42');house(W*.74,H*.22,W*.24,H*.30,'#f7b7a0','#a94b86');
+house(W*.35,H*.29,W*.24,H*.22,'#ffe6a1','#c45a42');
+ellipse(W*.1,H*.32,Math.min(W,H)*.11,Math.min(W,H)*.13,'#7bca45');
+ctx.fillStyle='#81512f';ctx.fillRect(W*.09,H*.30,W*.025,H*.35);
+for(let i=0;i<6;i++){ellipse(W*(.03+i*.035),H*(.26+(i%2)*.03),W*.035,H*.055,['#3d9e39','#5bbf42','#79cf4b'][i%3])}
+ctx.fillStyle='#69c94d';ctx.fillRect(0,H*.62,W,H*.38);
+ctx.fillStyle='#d8a66a';ctx.beginPath();ctx.moveTo(W*.36,H*.61);ctx.lineTo(W*.64,H*.61);ctx.lineTo(W*.92,H);ctx.lineTo(W*.08,H);ctx.closePath();ctx.fill();
+ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(W*.5,H*.64);ctx.lineTo(W*.5,H);ctx.stroke();
+for(let i=0;i<22;i++){const x=(i*83)%W,y=H*(.66+(i%4)*.075);ellipse(x,y,3,3,['#f45b76','#ffe05b','#fff'][i%3])}
+ctx.fillStyle='#f0bd63';ctx.font='bold '+(portrait?18:22)+'px system-ui';ctx.fillText(($('videoTitle').value.trim()||'AI STORY STUDIO').slice(0,26),pad,portrait?35:34);
+ctx.textAlign='right';ctx.fillStyle='#17334b';ctx.fillText('SCENE '+(sceneIndex+1)+' / '+scenes.length,W-pad,portrait?35:34);ctx.textAlign='left';
+// Story-based scenery details.
 const visualMap=[[/गाँव|गांव|village|घर/,'🏡'],[/जंगल|पेड़|forest|tree/,'🌳'],[/प्यार|प्रेम|love|दिल/,'❤️'],[/स्कूल|पढ़ाई|school/,'🎒'],[/बारिश|rain/,'🌧️'],[/नदी|पानी|समुद्र|river|sea/,'🌊'],[/पहाड़|mountain/,'🏔️'],[/दोस्त|मित्र|friend/,'🤝'],[/परिवार|माँ|पिता|family/,'👨‍👩‍👧'],[/राजा|रानी|king|queen/,'👑'],[/जादू|magic/,'✨']];
 const visual=visualMap.find(([re])=>re.test(lower));
-ctx.textAlign='center';ctx.font=(portrait?85:92)+'px system-ui';ctx.fillText(visual?visual[1]:'🎬',W/2,H*(portrait?.31:.30));ctx.textAlign='left';
-// Story-specific appearance: adapt the recurring illustrated cast to the people mentioned.
-const hasGirl=/लड़की|लड़की|बेटी|बहन|राजकुमारी|girl|daughter|sister|woman|महिला/.test(lower);
-const hasBoy=/लड़का|लड़का|बेटा|भाई|राजकुमार|boy|son|brother|man|पुरुष/.test(lower);
-const isChild=/बच्चे|बच्चों|बच्चा|लड़का|लड़का|लड़की|लड़की|बेटा|बेटी|child|children|kid/.test(lower);
-const castCount=/तीन|3 |तीन बच्चे|दोस्तों|दोनों|three|friends/.test(lower)?3:2;
-function drawCharacter(cx,ground,scale,shirt,hair,step,kind){
-ctx.save();ctx.translate(cx,ground);const bob=Math.sin(phase*3+step)*2*scale;
-const skin=kind==='man2'?'#9b6247':'#c9855f';
-const headR=25*scale,bodyW=37*scale,bodyH=76*scale,legSwing=Math.sin(phase*3+step)*5*scale;
-ctx.lineCap='round';ctx.lineJoin='round';
-// trousers and polished shoes
-ctx.fillStyle=kind==='man2'?'#293c59':'#27334a';
-ctx.beginPath();ctx.moveTo(-16*scale,-bodyH+8*scale+bob);ctx.lineTo(-3*scale,-bodyH+8*scale+bob);ctx.lineTo((-7+legSwing)*scale,-5*scale);ctx.lineTo(-22*scale,-5*scale);ctx.closePath();ctx.fill();
-ctx.beginPath();ctx.moveTo(3*scale,-bodyH+8*scale+bob);ctx.lineTo(16*scale,-bodyH+8*scale+bob);ctx.lineTo((22-legSwing)*scale,-5*scale);ctx.lineTo(7*scale,-5*scale);ctx.closePath();ctx.fill();
-ctx.fillStyle='#171d2a';roundedRect(-25*scale,-8*scale,25*scale,9*scale,4*scale);ctx.fill();roundedRect(5*scale,-8*scale,25*scale,9*scale,4*scale);ctx.fill();
-// torso, shirt and collar
-ctx.fillStyle=shirt;roundedRect(-bodyW/2,-bodyH-4*scale+bob,bodyW,bodyH,10*scale);ctx.fill();
-ctx.fillStyle='rgba(255,255,255,.18)';ctx.fillRect(-2*scale,-bodyH+4*scale+bob,4*scale,bodyH-12*scale);
-ctx.fillStyle='#f7e9d6';ctx.beginPath();ctx.moveTo(-9*scale,-bodyH+2*scale+bob);ctx.lineTo(0,-bodyH+15*scale+bob);ctx.lineTo(9*scale,-bodyH+2*scale+bob);ctx.lineTo(3*scale,-bodyH-2*scale+bob);ctx.lineTo(-3*scale,-bodyH-2*scale+bob);ctx.closePath();ctx.fill();
-// sleeves, arms and hands
-ctx.fillStyle=shirt;roundedRect(-27*scale,-bodyH+4*scale+bob,13*scale,28*scale,6*scale);ctx.fill();roundedRect(14*scale,-bodyH+4*scale+bob,13*scale,28*scale,6*scale);ctx.fill();
-ctx.strokeStyle=skin;ctx.lineWidth=9*scale;ctx.beginPath();ctx.moveTo(-22*scale,-bodyH+26*scale+bob);ctx.lineTo((-29+Math.sin(phase*2+step)*3)*scale,-bodyH+57*scale);ctx.moveTo(22*scale,-bodyH+26*scale+bob);ctx.lineTo((29-Math.sin(phase*2+step)*3)*scale,-bodyH+57*scale);ctx.stroke();
-ctx.fillStyle=skin;ctx.beginPath();ctx.arc(-29*scale,-bodyH+59*scale,5*scale,0,Math.PI*2);ctx.arc(29*scale,-bodyH+59*scale,5*scale,0,Math.PI*2);ctx.fill();
-// neck and ears
-ctx.fillStyle=skin;ctx.fillRect(-7*scale,-bodyH-14*scale+bob,14*scale,17*scale);
-const hy=-bodyH-39*scale+bob;
-ctx.beginPath();ctx.arc(-headR+1*scale,hy+7*scale,5*scale,0,Math.PI*2);ctx.arc(headR-1*scale,hy+7*scale,5*scale,0,Math.PI*2);ctx.fill();
-ctx.beginPath();ctx.ellipse(0,hy,headR,headR*1.16,0,0,Math.PI*2);ctx.fill();
-// hair cap and side hair
-ctx.fillStyle=hair;ctx.beginPath();ctx.moveTo(-headR,hy+1*scale);ctx.quadraticCurveTo(-headR*1.05,hy-headR*1.35,-5*scale,hy-headR*1.12);ctx.quadraticCurveTo(10*scale,hy-headR*1.55,headR,hy-headR*.85);ctx.lineTo(headR*.92,hy-8*scale);ctx.quadraticCurveTo(12*scale,hy-20*scale,0,hy-17*scale);ctx.quadraticCurveTo(-13*scale,hy-25*scale,-headR*.92,hy-8*scale);ctx.closePath();ctx.fill();
-ctx.fillRect(-headR,hy-3*scale,7*scale,19*scale);ctx.fillRect(headR-7*scale,hy-3*scale,7*scale,19*scale);
-// eyebrows, eyes, nose and friendly smile
-ctx.strokeStyle='#39251f';ctx.lineWidth=2.3*scale;ctx.beginPath();ctx.moveTo(-13*scale,hy-5*scale);ctx.lineTo(-5*scale,hy-7*scale);ctx.moveTo(5*scale,hy-7*scale);ctx.lineTo(13*scale,hy-5*scale);ctx.stroke();
-ctx.fillStyle='#211b1b';ctx.beginPath();ctx.arc(-9*scale,hy+1*scale,2.5*scale,0,Math.PI*2);ctx.arc(9*scale,hy+1*scale,2.5*scale,0,Math.PI*2);ctx.fill();
-ctx.strokeStyle='#9b5d45';ctx.lineWidth=1.7*scale;ctx.beginPath();ctx.moveTo(0,hy+3*scale);ctx.lineTo(-2*scale,hy+10*scale);ctx.lineTo(2*scale,hy+10*scale);ctx.stroke();
-ctx.strokeStyle='#743b35';ctx.lineWidth=2*scale;ctx.beginPath();ctx.arc(0,hy+11*scale,7*scale,.18,Math.PI-.18);ctx.stroke();
+if(visual){ctx.textAlign='center';ctx.font=(portrait?42:54)+'px system-ui';ctx.fillText(visual[1],W*.5,H*.43);ctx.textAlign='left'}
+// Character drawing: friendly, expressive cartoon people with distinct body shapes and signature outfits.
+function drawPerson(cx,base,kind){
+ctx.save();ctx.translate(cx,base+Math.sin(phase*2.6+(kind==='round'?0:1.5))*2);
+const round=kind==='round',sc=portrait?.88:1.02,skin='#f2ad83';
+const bodyW=(round?66:38)*sc,bodyH=(round?92:115)*sc,headR=(round?43:34)*sc;
+const shirt=round?'#ed2929':'#ffd52e',trousers=round?'#f4c51e':'#ef7b35',hair=round?'#24212b':'#4a352d';
+const grad=(x,y,w,h,c1,c2)=>{const g=ctx.createLinearGradient(x,y,x+w,y+h);g.addColorStop(0,c1);g.addColorStop(1,c2);return g};
+// ground shadow
+ellipse(0,5*sc,47*sc,10*sc,'rgba(38,52,38,.25)');
+// legs and shoes
+ctx.fillStyle=trousers;
+if(round){roundedRect(-27*sc,-bodyH+58*sc,25*sc,55*sc,11*sc);ctx.fill();roundedRect(3*sc,-bodyH+58*sc,25*sc,55*sc,11*sc);ctx.fill()}
+else{roundedRect(-21*sc,-bodyH+76*sc,17*sc,75*sc,8*sc);ctx.fill();roundedRect(4*sc,-bodyH+76*sc,17*sc,75*sc,8*sc);ctx.fill()}
+ctx.fillStyle='#47352f';ellipse(-16*sc,0,19*sc,8*sc,'#47352f');ellipse(17*sc,0,19*sc,8*sc,'#47352f');
+// torso
+ctx.fillStyle=grad(-bodyW/2,-bodyH,bodyW,bodyH,round?'#ff5550':'#fff06a',shirt);
+roundedRect(-bodyW/2,-bodyH,bodyW,bodyH,round?24*sc:13*sc);ctx.fill();
+if(round){ctx.fillStyle='#182b50';roundedRect(-bodyW/2-5*sc,-bodyH+8*sc,bodyW+10*sc,bodyH*.52,12*sc);ctx.fill();ctx.fillStyle='#f7e8c8';ctx.fillRect(-5*sc,-bodyH+5*sc,10*sc,17*sc)}
+else{ctx.fillStyle='#e5a91a';ctx.fillRect(-2*sc,-bodyH+5*sc,4*sc,bodyH-10*sc);for(let k=0;k<3;k++)ellipse(0,-bodyH+25*sc+k*16*sc,2*sc,2*sc,'#a66d1e')}
+// arms with a little swing
+ctx.strokeStyle=skin;ctx.lineWidth=round?17*sc:12*sc;ctx.lineCap='round';
+ctx.beginPath();ctx.moveTo(-bodyW*.42,-bodyH+20*sc);ctx.lineTo(-bodyW*.72,-bodyH+62*sc+Math.sin(phase*2)*5*sc);ctx.moveTo(bodyW*.42,-bodyH+20*sc);ctx.lineTo(bodyW*.72,-bodyH+62*sc-Math.sin(phase*2)*5*sc);ctx.stroke();
+// neck and head
+ctx.fillStyle=skin;ctx.fillRect(-9*sc,-bodyH-13*sc,18*sc,19*sc);
+ellipse(0,-bodyH-48*sc,headR,headR*1.05,skin);
+// hair
+ctx.fillStyle=hair;
+if(round){ctx.beginPath();ctx.arc(0,-bodyH-58*sc,headR,Math.PI,Math.PI*2);ctx.lineTo(headR,-bodyH-43*sc);ctx.quadraticCurveTo(0,-bodyH-75*sc,-headR,-bodyH-43*sc);ctx.fill()}
+else{ellipse(0,-bodyH-79*sc,headR*.98,12*sc,hair)}
+// eyes and brows
+ctx.strokeStyle='#34241e';ctx.lineWidth=3*sc;ctx.beginPath();ctx.moveTo(-17*sc,-bodyH-53*sc);ctx.lineTo(-7*sc,-bodyH-56*sc);ctx.moveTo(7*sc,-bodyH-56*sc);ctx.lineTo(17*sc,-bodyH-53*sc);ctx.stroke();
+ellipse(-12*sc,-bodyH-43*sc,4*sc,6*sc,'#fff');ellipse(12*sc,-bodyH-43*sc,4*sc,6*sc,'#fff');ellipse(-12*sc,-bodyH-42*sc,2*sc,3*sc,'#282323');ellipse(12*sc,-bodyH-42*sc,2*sc,3*sc,'#282323');
+// nose and smile
+ellipse(0,-bodyH-32*sc,5*sc,4*sc,'#d88c68');
+ctx.strokeStyle='#8d4438';ctx.lineWidth=2.5*sc;ctx.beginPath();ctx.arc(0,-bodyH-27*sc,11*sc,.12,Math.PI-.12);ctx.stroke();
+// moustache for the round red-shirt hero; glasses for the tall yellow-shirt friend
+if(round){ctx.fillStyle='#24212b';ctx.beginPath();ctx.ellipse(-10*sc,-bodyH-29*sc,12*sc,5*sc,-.2,0,Math.PI*2);ctx.ellipse(10*sc,-bodyH-29*sc,12*sc,5*sc,.2,0,Math.PI*2);ctx.fill()}
+else{ctx.strokeStyle='#343a45';ctx.lineWidth=2.5*sc;ctx.beginPath();ctx.arc(-12*sc,-bodyH-43*sc,10*sc,0,Math.PI*2);ctx.arc(12*sc,-bodyH-43*sc,10*sc,0,Math.PI*2);ctx.moveTo(-2*sc,-bodyH-43*sc);ctx.lineTo(2*sc,-bodyH-43*sc);ctx.stroke()}
 ctx.restore();
 }
-const ground=H*(portrait?.84:.86),sc=portrait?1.08:1.28;
-const leftShirt=hasGirl&&!hasBoy?'#d85a91':'#e76f51',rightShirt=hasBoy&&!hasGirl?'#3d91c6':'#3d91c6';
-drawCharacter(W*.29,ground,sc,leftShirt,'#38251f',0,'man1');
-drawCharacter(W*.71,ground,sc,rightShirt,'#211c2a',2,'man2');
-if(castCount===3)drawCharacter(W*.50,ground,sc*.85,'#e3b341','#35241d',4,'boy');
-// Keep story text above the characters, so both remain clearly visible.
-const titleFont='bold '+(portrait?25:27)+'px system-ui',titleLines=linesFor(story,W-pad*2,titleFont).slice(0,portrait?4:3);ctx.font=titleFont;ctx.fillStyle='#fff';ctx.textAlign='center';
-const titleY=H*(portrait?.43:.40);titleLines.forEach((line,i)=>ctx.fillText(line,W/2,titleY+i*(portrait?34:35)));ctx.textAlign='left';
-const subY=H-(portrait?90:62);ctx.fillStyle='rgba(5,10,24,.86)';roundedRect(pad-8,subY-24,W-pad*2+16,portrait?55:44,10);ctx.fill();ctx.fillStyle='#f0bd63';ctx.font='bold '+(portrait?14:15)+'px system-ui';ctx.fillText('कहानी',pad,subY-5);ctx.fillStyle='#e6ebf8';ctx.font=(portrait?13:14)+'px system-ui';const cap=linesFor(scene.narration||story,W-pad*2,(portrait?13:14)+'px system-ui').slice(0,1);cap.forEach((line,i)=>ctx.fillText(line,pad,subY+15+i*18));
-ctx.fillStyle='#34415f';roundedRect(pad,H-12,W-pad*2,5,3);ctx.fill();ctx.fillStyle='#f0bd63';roundedRect(pad,H-12,(W-pad*2)*Math.min(1,(sceneIndex+progress)/scenes.length),5,3);ctx.fill();
+const base=H*(portrait?.85:.88);
+drawPerson(W*.32,base,'round');drawPerson(W*.70,base,'slim');
+// Keep the story caption in a clear lower-third panel, never covering the faces.
+const titleFont='bold '+(portrait?20:24)+'px system-ui',titleLines=linesFor(story,W-pad*2,titleFont).slice(0,portrait?3:2);
+const panelY=H*(portrait?.60:.63),lineH=portrait?27:31;
+ctx.fillStyle='rgba(10,25,42,.78)';roundedRect(pad,panelY-27,W-pad*2,Math.min(portrait?112:94,38+titleLines.length*lineH),13);ctx.fill();
+ctx.textAlign='center';ctx.font=titleFont;ctx.fillStyle='#fff';titleLines.forEach((line,i)=>ctx.fillText(line,W/2,panelY+i*lineH));ctx.textAlign='left';
+const subY=H-(portrait?48:35);ctx.fillStyle='rgba(10,25,42,.82)';roundedRect(pad,subY-18,W-pad*2,portrait?34:28,8);ctx.fill();ctx.fillStyle='#ffe08a';ctx.font=(portrait?12:14)+'px system-ui';ctx.fillText(linesFor(scene.narration||story,W-pad*2,(portrait?12:14)+'px system-ui')[0]||'',pad+8,subY+4);
+ctx.fillStyle='#34415f';roundedRect(pad,H-7,W-pad*2,4,3);ctx.fillStyle='#ffe08a';roundedRect(pad,H-7,(W-pad*2)*Math.min(1,(sceneIndex+progress)/scenes.length),4,3);
 }
 
 stream=canvas.captureStream(fps);
